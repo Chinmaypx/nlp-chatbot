@@ -2,17 +2,17 @@
 
 ## Project objective
 
-Build a college-level chatbot foundation that will eventually support multiple NLP tasks in Marathi and English. Phase 0 establishes a modular API, a minimal web frontend, and a health check. **NLP models and NLP task behavior are not implemented yet.** API task routes intentionally return HTTP 501 placeholders.
+Build a college-level chatbot foundation that will eventually support multiple NLP tasks in Marathi and English. Phase 0 established a modular API and frontend. Phase 1 adds a lightweight language identification heuristic and reusable Marathi/English preprocessing foundation. **No trained NLP models or model-backed task behavior are implemented.** Other task routes intentionally remain HTTP 501 placeholders.
 
 ## Planned NLP capabilities
 
+- Language detection and preprocessing foundation (Phase 1)
 - Sentiment analysis
 - Text summarization
-- Marathi�English translation
+- Marathi-English translation
 - Text classification and intent detection
 - Question answering
 - Keyword extraction
-- Language detection
 - Conversation history
 
 ## Technology stack
@@ -20,7 +20,7 @@ Build a college-level chatbot foundation that will eventually support multiple N
 - Backend: Python, FastAPI, Uvicorn
 - Frontend: React, Vite
 - Tests: pytest, FastAPI TestClient
-- Persistence and model libraries are deferred until their needs are defined.
+- No database or ML model libraries are needed in Phase 1.
 
 ## Project structure
 
@@ -28,19 +28,16 @@ Build a college-level chatbot foundation that will eventually support multiple N
 backend/       FastAPI app, modular API routes, NLP/database placeholders, tests, data/model directories
 frontend/      Minimal React and Vite application
 notebooks/     Reserved notebooks for later NLP phases
-tests/         Reserved for cross-project tests
 README.md      Project overview and setup
 ```
 
 ## Phase-wise development plan
 
-- **Phase 0 (current):** Project architecture, health endpoint, explicit API placeholders, minimal frontend, and test foundation.
-- **Phase 1:** Define datasets and preprocessing/evaluation approach.
+- **Phase 0:** Project architecture, health endpoint, explicit API placeholders, minimal frontend, and test foundation.
+- **Phase 1 (current):** Language detection and Marathi/English preprocessing, tokenization, and optional stopword handling.
 - **Phase 2:** Implement and evaluate NLP capabilities incrementally.
 - **Phase 3:** Connect task services to the chatbot experience and persistence.
 - **Phase 4:** Integration, broader testing, documentation, and deployment preparation.
-
-No model results are generated or implied in Phase 0.
 
 ## Run the backend
 
@@ -61,6 +58,42 @@ python -m uvicorn main:app --reload
 
 The health endpoint is at `http://127.0.0.1:8000/health`; interactive API documentation is at `/docs`.
 
+## Phase 1 NLP foundation
+
+The language detector uses Unicode script heuristics: Devanagari letters are reported as `Marathi`, Latin letters as `English`, both as `Mixed`, and text without either as `Unknown`. This is a lightweight rule-based baseline, **not** a trained language identifier. Devanagari alone cannot distinguish Marathi from other Devanagari languages, and mixed-language detection is approximate.
+
+Preprocessing applies Unicode NFC normalization, removes control and common invisible formatting artifacts, normalizes whitespace, and collapses repeated punctuation while retaining sentence punctuation. Sentence splitting recognizes `.`, `?`, `!`, danda (`।`) and double danda (`॥`). Word tokenization preserves Devanagari and Latin words, numeric groups, and punctuation. Small editable Marathi and English stopword lists live in `backend/nlp/resources/`; stopword removal is opt-in. No stemming or lemmatization is performed.
+
+### API endpoints
+
+`POST /api/language-detect`
+
+Request:
+
+```json
+{"text": "मला अभ्यास करायला आवडतो."}
+```
+
+Response:
+
+```json
+{"language": "Marathi"}
+```
+
+`POST /api/preprocess`
+
+Request (stopword removal is optional and defaults to false):
+
+```json
+{"text": "मला आज college ला जायचे आहे!", "remove_stopwords": true}
+```
+
+Response includes `original_text`, `detected_language`, `normalized_text`, `cleaned_text`, `sentences`, `tokens`, and `processed_tokens`. Blank text, missing `text`, and invalid JSON receive HTTP 422 validation errors.
+
+The previous `/api/language-detection/` URL remains available as a compatibility alias. `/health` is unchanged. Other NLP endpoints remain placeholders.
+
+Phase 1 provides reusable language detection and preprocessing; it does not claim model accuracy or implement sentiment analysis, summarization, translation, question answering, classification, keyword extraction, chatbot intelligence, or persistence.
+
 ## Run the frontend
 
 In another terminal:
@@ -75,10 +108,8 @@ For a production build, run `npm run build` from `frontend/`.
 
 ## Testing
 
-From the repository root, install backend dependencies as above, then:
+From the repository root, install backend dependencies as above, then run the complete backend suite. It covers health, language detection, preprocessing/tokenization, stopword behavior, Unicode preservation, and API validation:
 
 ```powershell
 python -m pytest backend/tests -q
 ```
-
-The health test checks HTTP 200 and the expected status and service fields.

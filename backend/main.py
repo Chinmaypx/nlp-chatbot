@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 
 from api import (
-    chat, classification, history, keywords, language_detect,
+    chat, classification, history, keywords, language_detect, preprocessing,
     question_answering, sentiment, summarization, translation,
 )
 
 app = FastAPI(
     title="Multitask Marathi NLP Chatbot",
-    description="Phase 0 API foundation; NLP capabilities are placeholders.",
+    description="Phase 1 language detection and preprocessing foundation; model-based NLP capabilities remain placeholders.",
     version="0.1.0",
 )
 
@@ -19,6 +19,8 @@ app.include_router(classification.router, prefix="/api/classification", tags=["c
 app.include_router(question_answering.router, prefix="/api/question-answering", tags=["question-answering"])
 app.include_router(keywords.router, prefix="/api/keywords", tags=["keywords"])
 app.include_router(language_detect.router, prefix="/api/language-detection", tags=["language-detection"])
+app.include_router(language_detect.router, prefix="/api/language-detect", tags=["language-detection"])
+app.include_router(preprocessing.router, prefix="/api/preprocess", tags=["preprocessing"])
 app.include_router(history.router, prefix="/api/history", tags=["history"])
 
 
